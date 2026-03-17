@@ -1,0 +1,34 @@
+[Unit]
+Description=Snowflake UUID Generator Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=snowflake
+Group=snowflake
+ExecStart=/usr/local/bin/snowflake-server
+Restart=on-failure
+RestartSec=5
+StartLimitInterval=60
+StartLimitBurst=5
+
+# Configuration via environment file
+EnvironmentFile=-/etc/snowflake-uuid/snowflake-uuid.env
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/
+LimitNOFILE=65536
+MemoryMax=128M
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=snowflake-uuid
+
+[Install]
+WantedBy=multi-user.target

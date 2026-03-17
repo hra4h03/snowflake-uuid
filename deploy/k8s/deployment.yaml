@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels:
+    app: myapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        # Your main application container
+        - name: myapp
+          image: myapp:latest
+          ports:
+            - containerPort: 8000
+          env:
+            # Access the snowflake sidecar at http://localhost:8080/id
+            - name: SNOWFLAKE_URL
+              value: "http://localhost:8080"
+
+        # Snowflake ID generator sidecar
+        - name: snowflake
+          image: snowflake-uuid:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SNOWFLAKE_NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['snowflake-node-id']
+            # Alternative: auto-detect from pod identity
+            # - name: SNOWFLAKE_AUTO_NODE_ID
+            #   value: "true"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 1
+            periodSeconds: 5
